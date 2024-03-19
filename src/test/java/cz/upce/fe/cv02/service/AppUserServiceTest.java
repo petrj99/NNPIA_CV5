@@ -24,6 +24,7 @@ public class AppUserServiceTest {
     @InjectMocks
     private AppUserService appUserService;
 
+    //Pokud bychom používali JUnit 4 dalo by se použít @Test(expected = SomeException.class)
     @Test
     public void findById_shouldReturnUser_whenUserExists() throws ResourceNotFoundException {
         AppUser expectedUser = new AppUser(
