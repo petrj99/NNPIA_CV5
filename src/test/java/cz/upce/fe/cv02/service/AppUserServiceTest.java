@@ -2,6 +2,8 @@ package cz.upce.fe.cv02.service;
 
 import cz.upce.fe.cv02.domain.AppUser;
 import cz.upce.fe.cv02.repository.AppUserRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -23,6 +25,19 @@ public class AppUserServiceTest {
 
     @InjectMocks
     private AppUserService appUserService;
+
+    @BeforeEach
+    void setup() {
+        AppUser user = new AppUser();
+        user.setUsername("testUser");
+        user.setActive(true);
+        appUserRepository.save(user);
+    }
+
+    @AfterEach
+    void cleanUp() {
+        appUserRepository.deleteAll();
+    }
 
     //Pokud bychom používali JUnit 4 dalo by se použít @Test(expected = SomeException.class)
     @Test
