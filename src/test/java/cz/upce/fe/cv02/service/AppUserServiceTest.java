@@ -1,42 +1,33 @@
 package cz.upce.fe.cv02.service;
 
 import cz.upce.fe.cv02.domain.AppUser;
-import cz.upce.fe.cv02.repository.AppUserRepository;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import static org.mockito.Mockito.*;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.context.annotation.Import;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@ExtendWith(MockitoExtension.class)
+@DataJpaTest
+@Import(AppUserService.class)
 public class AppUserServiceTest {
 
-    @Mock
-    private AppUserRepository appUserRepository;
-
-    @InjectMocks
+    @Autowired
     private AppUserService appUserService;
 
-    @BeforeEach
-    void setup() {
-        AppUser user = new AppUser();
-        user.setUsername("testUser");
-        user.setActive(true);
-        appUserRepository.save(user);
-    }
+    @Autowired
+    private TestEntityManager entityManager;
 
-    @AfterEach
-    void cleanUp() {
-        appUserRepository.deleteAll();
+    @BeforeEach
+    public void setup() {
+        entityManager.getEntityManager().createQuery("DELETE FROM AppUser").executeUpdate();
     }
 
     //Pokud bychom používali JUnit 4 dalo by se použít @Test(expected = SomeException.class)
@@ -50,8 +41,8 @@ public class AppUserServiceTest {
                 LocalDateTime.now(),
                 LocalDateTime.now()
         );
-
-        when(appUserRepository.findById(100L)).thenReturn(Optional.of(expectedUser));
+        entityManager.persist(expectedUser);
+        entityManager.flush();
 
         AppUser result = appUserService.findById(100L);
 
@@ -62,8 +53,6 @@ public class AppUserServiceTest {
 
     @Test
     public void findById_shouldThrowResourceNotFoundException_whenUserNotFound() {
-        when(appUserRepository.findById(anyLong())).thenReturn(Optional.empty());
-
         assertThrows(ResourceNotFoundException.class, () -> {
             appUserService.findById(100L);
         });
