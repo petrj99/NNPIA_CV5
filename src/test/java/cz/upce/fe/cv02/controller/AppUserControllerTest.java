@@ -1,51 +1,40 @@
 package cz.upce.fe.cv02.controller;
 
-import cz.upce.fe.cv02.domain.AppUser;
 import cz.upce.fe.cv02.dto.AppUserResponseDtoV1;
-import cz.upce.fe.cv02.service.AppUserService;
-import cz.upce.fe.cv02.service.ResourceNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
-import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
-@WebMvcTest(AppUserController.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
 public class AppUserControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @LocalServerPort
+    private int port;
 
-    @MockBean
-    private AppUserService appUserService;
+    @Autowired
+    private TestRestTemplate restTemplate;
 
     @Test
-    public void findById_shouldReturnUser_whenUserExists() throws Exception {
+    public void findById_shouldReturnUser_whenUserExists() {
         Long existingUserId = 1L;
-        AppUserResponseDtoV1 responseDto = new AppUserResponseDtoV1();
+        ResponseEntity<AppUserResponseDtoV1> response = restTemplate.getForEntity("http://localhost:" + port + "/app-user/{id}", AppUserResponseDtoV1.class, existingUserId);
 
-        given(appUserService.findById(existingUserId)).willReturn(new AppUser()); // Nastavte AppUser podle vaší implementace
-        given(new AppUser().toDto()).willReturn(responseDto);
-
-        mockMvc.perform(get("/app-user/{id}", existingUserId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-        ;
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
-    public void findById_shouldReturnNotFound_whenUserDoesNotExist() throws Exception {
+    public void findById_shouldReturnNotFound_whenUserDoesNotExist() {
         Long nonExistingUserId = 2L;
-        given(appUserService.findById(nonExistingUserId)).willThrow(new ResourceNotFoundException());
+        ResponseEntity<?> response = restTemplate.getForEntity("http://localhost:" + port + "/app-user/{id}", Object.class, nonExistingUserId);
 
-        mockMvc.perform(get("/app-user/{id}", nonExistingUserId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound());
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 }
